@@ -3,15 +3,16 @@
 #include <math.h>
 #include <time.h>
 
-#define NUM_FISH 1000000 // Number of fish in the school
-#define NUM_STEPS 100    // Number of simulation steps
-#define W_INITIAL 10.0   // Initial weight of each fish
-#define W_MAX (2 * W_INITIAL)
+#define NUM_FISH 3     // Number of fish in the school
+#define NUM_STEPS 3    // Number of simulation steps
+#define W_INITIAL 10.0 // Initial weight of each fish
+#define W_MAX (10 * W_INITIAL)
 
 // Structure to represent a fish
 typedef struct
 {
     double x, y; // Coordinates
+    double delta_fi;
     double weight;
 } Fish;
 
@@ -62,21 +63,22 @@ int main()
             school[i].y = new_y;
             double new_obj = calculateObjective(&school[i]);
             double delta_fi = fabs(new_obj - old_obj);
+            school[i].delta_fi = delta_fi;
 
             if (delta_fi > delta_fi_max)
             {
                 delta_fi_max = delta_fi;
             }
-
-            // Update fish weight
-            school[i].weight = fmin(W_MAX, school[i].weight + delta_fi_max);
         }
 
         double bari_num = 0.0, bari_denom = 0.0, bari = 0.0;
         for (int i = 0; i < NUM_FISH; i++)
         {
-            bari_num += sqrt((school[i].x * school[i].x) + (school[i].y * school[i].y)) * school[i].weight;
-            bari_denom += sqrt((school[i].x * school[i].x) + (school[i].y * school[i].y));
+            // Update fish weight
+            school[i].weight = fmin(W_MAX, school[i].weight + school[i].delta_fi / delta_fi_max);
+
+            bari_num += calculateObjective(&school[i]) * school[i].weight;
+            bari_denom += calculateObjective(&school[i]);
         }
         bari = bari_num / bari_denom;
 
