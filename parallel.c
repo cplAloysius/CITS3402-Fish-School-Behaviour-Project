@@ -2,9 +2,10 @@
 #include <stdlib.h>
 #include <math.h>
 #include <time.h>
+#include <omp.h>
 
-#define NUM_FISH 100000 // Number of fish in the school
-#define NUM_STEPS 300   // Number of simulation steps
+#define NUM_FISH 1000000// Number of fish in the school
+#define NUM_STEPS 30   // Number of simulation steps
 #define W_INITIAL 100.0 // Initial weight of each fish
 #define W_MAX (2 * W_INITIAL)
 
@@ -43,17 +44,21 @@ int main()
     }
 
     // Start timing
-    clock_t start_time = clock();
+    double start_time = omp_get_wtime();
 
     // Simulation loop
     for (int step = 0; step < NUM_STEPS; step++)
     {
         double delta_fi_max = 0.0;
+       
+        #pragma omp parallel
+        {
+     
+            double thread_max = 0.0;
+        #pragma omp for
+
         for (int i = 0; i < NUM_FISH; i++)
         {
-            // Swim in a random direction
-            // school[i].x += (double)(rand() % 21 - 10) / 100.0;
-            // school[i].y += (double)(rand() % 21 - 10) / 100.0;
 
             // Calculate change in objective function
             double old_obj = calculateObjective(&school[i]);
@@ -65,11 +70,20 @@ int main()
             double delta_fi = fabs(new_obj - old_obj);
             school[i].delta_fi = delta_fi;
 
-            if (delta_fi > delta_fi_max)
+            if (delta_fi > thread_max)
             {
-                delta_fi_max = delta_fi;
+                thread_max = delta_fi;
             }
         }
+        #pragma omp critical
+        {
+            if (thread_max > delta_fi_max)
+            {
+                delta_fi_max = thread_max;
+            }
+        }
+        }
+
 
         double bari_num = 0.0, bari_denom = 0.0, bari = 0.0;
         for (int i = 0; i < NUM_FISH; i++)
@@ -99,8 +113,8 @@ int main()
     }
 
     // Calculate and print elapsed time
-    clock_t end_time = clock();
-    double elapsed_time = (double)(end_time - start_time) / CLOCKS_PER_SEC;
+    double end_time = omp_get_wtime();
+    double elapsed_time = end_time - start_time;
     printf("Elapsed Time: %lf seconds\n", elapsed_time);
 
     // Free dynamically allocated memory
