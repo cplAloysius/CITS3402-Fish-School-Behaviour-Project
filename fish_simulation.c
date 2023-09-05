@@ -4,8 +4,8 @@
 #include <time.h>
 
 #define NUM_FISH 100// Number of fish in the school
-#define NUM_STEPS 100000000000    // Number of simulation steps
-#define W_INITIAL 10.0   // Initial weight of each fish
+#define NUM_STEPS 1000  // Number of simulation steps
+#define W_INITIAL 20.0   // Initial weight of each fish
 #define W_MAX (2 * W_INITIAL)
 
 // Structure to represent a fish
