@@ -4,9 +4,9 @@
 #include <time.h>
 #include <omp.h>
 
-#define NUM_FISH 1000000// Number of fish in the school
-#define NUM_STEPS 30   // Number of simulation steps
-#define W_INITIAL 100.0 // Initial weight of each fish
+#define NUM_FISH 1000000 // Number of fish in the school
+#define NUM_STEPS 30     // Number of simulation steps
+#define W_INITIAL 100.0  // Initial weight of each fish
 #define W_MAX (2 * W_INITIAL)
 
 // Structure to represent a fish
@@ -25,6 +25,7 @@ double calculateObjective(Fish *fish)
 
 int main()
 {
+    printf("Parallel program\n");
     // Initialize random number generator
     srand(time(NULL));
 
@@ -50,40 +51,39 @@ int main()
     for (int step = 0; step < NUM_STEPS; step++)
     {
         double delta_fi_max = 0.0;
-       
-        #pragma omp parallel
+
+#pragma omp parallel
         {
-     
+
             double thread_max = 0.0;
-        #pragma omp for
+#pragma omp for
 
-        for (int i = 0; i < NUM_FISH; i++)
-        {
-
-            // Calculate change in objective function
-            double old_obj = calculateObjective(&school[i]);
-            double new_x = school[i].x + (double)(rand() % 21 - 10) / 100.0;
-            double new_y = school[i].y + (double)(rand() % 21 - 10) / 100.0;
-            school[i].x = new_x;
-            school[i].y = new_y;
-            double new_obj = calculateObjective(&school[i]);
-            double delta_fi = fabs(new_obj - old_obj);
-            school[i].delta_fi = delta_fi;
-
-            if (delta_fi > thread_max)
+            for (int i = 0; i < NUM_FISH; i++)
             {
-                thread_max = delta_fi;
+
+                // Calculate change in objective function
+                double old_obj = calculateObjective(&school[i]);
+                double new_x = school[i].x + (double)(rand() % 21 - 10) / 100.0;
+                double new_y = school[i].y + (double)(rand() % 21 - 10) / 100.0;
+                school[i].x = new_x;
+                school[i].y = new_y;
+                double new_obj = calculateObjective(&school[i]);
+                double delta_fi = fabs(new_obj - old_obj);
+                school[i].delta_fi = delta_fi;
+
+                if (delta_fi > thread_max)
+                {
+                    thread_max = delta_fi;
+                }
+            }
+#pragma omp critical
+            {
+                if (thread_max > delta_fi_max)
+                {
+                    delta_fi_max = thread_max;
+                }
             }
         }
-        #pragma omp critical
-        {
-            if (thread_max > delta_fi_max)
-            {
-                delta_fi_max = thread_max;
-            }
-        }
-        }
-
 
         double bari_num = 0.0, bari_denom = 0.0, bari = 0.0;
         for (int i = 0; i < NUM_FISH; i++)

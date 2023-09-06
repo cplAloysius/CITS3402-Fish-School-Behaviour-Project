@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <math.h>
 #include <time.h>
+#include <omp.h>
 
 #define NUM_FISH 1000000 // Number of fish in the school
 #define NUM_STEPS 30     // Number of simulation steps
@@ -24,7 +25,7 @@ double calculateObjective(Fish *fish)
 
 int main()
 {
-    printf("Sequential program:\n");
+    printf("Parallel program\n");
     // Initialize random number generator
     srand(time(NULL));
 
@@ -44,41 +45,46 @@ int main()
     }
 
     // Start timing
-    clock_t start_time = clock();
+    double start_time = omp_get_wtime();
 
     // Simulation loop
     for (int step = 0; step < NUM_STEPS; step++)
     {
         double delta_fi_max = 0.0, bari_num = 0.0, bari_denom = 0.0;
-
-        for (int i = 0; i < NUM_FISH; i++)
+#pragma omp parallel
         {
-            // Calculate change in objective function
-            double old_obj = calculateObjective(&school[i]);
-            double new_x = school[i].x + (double)(rand() % 21 - 10) / 100.0;
-            double new_y = school[i].y + (double)(rand() % 21 - 10) / 100.0;
-            school[i].x = new_x;
-            school[i].y = new_y;
-            double new_obj = calculateObjective(&school[i]);
-            double delta_fi = fabs(new_obj - old_obj);
-            school[i].delta_fi = delta_fi;
-        }
-
-        for (int i = 0; i < NUM_FISH; i++)
-        {
-            if (school[i].delta_fi > delta_fi_max)
+#pragma omp for
+            for (int i = 0; i < NUM_FISH; i++)
             {
-                delta_fi_max = school[i].delta_fi;
+                // Calculate change in objective function
+                double old_obj = calculateObjective(&school[i]);
+                double new_x = school[i].x + (double)(rand() % 21 - 10) / 100.0;
+                double new_y = school[i].y + (double)(rand() % 21 - 10) / 100.0;
+                school[i].x = new_x;
+                school[i].y = new_y;
+                double new_obj = calculateObjective(&school[i]);
+                double delta_fi = fabs(new_obj - old_obj);
+                school[i].delta_fi = delta_fi;
             }
-        }
 
-        for (int i = 0; i < NUM_FISH; i++)
-        {
-            // Update fish weight
-            school[i].weight = fmin(W_MAX, school[i].weight + school[i].delta_fi / delta_fi_max);
+#pragma omp for reduction(max : delta_fi_max)
+            for (int i = 0; i < NUM_FISH; i++)
+            {
+                if (school[i].delta_fi > delta_fi_max)
+                {
+                    delta_fi_max = school[i].delta_fi;
+                }
+            }
 
-            bari_num += calculateObjective(&school[i]) * school[i].weight;
-            bari_denom += calculateObjective(&school[i]);
+#pragma omp for reduction(+ : bari_num, bari_denom)
+            for (int i = 0; i < NUM_FISH; i++)
+            {
+                // Update fish weight
+                school[i].weight = fmin(W_MAX, school[i].weight + school[i].delta_fi / delta_fi_max);
+
+                bari_num += calculateObjective(&school[i]) * school[i].weight;
+                bari_denom += calculateObjective(&school[i]);
+            }
         }
         double bari = bari_num / bari_denom;
 
@@ -86,8 +92,8 @@ int main()
     }
 
     // Calculate and print elapsed time
-    clock_t end_time = clock();
-    double elapsed_time = (double)(end_time - start_time) / CLOCKS_PER_SEC;
+    double end_time = omp_get_wtime();
+    double elapsed_time = end_time - start_time;
     printf("Elapsed Time: %lf seconds\n", elapsed_time);
 
     // Free dynamically allocated memory
