@@ -4,8 +4,8 @@
 #include <time.h>
 
 #define NUM_FISH 1000000 // Number of fish in the school
-#define NUM_STEPS 30     // Number of simulation steps
-#define W_INITIAL 100.0  // Initial weight of each fish
+#define NUM_STEPS 3000   // Number of simulation steps
+#define W_INITIAL 10.0   // Initial weight of each fish
 #define W_MAX (2 * W_INITIAL)
 
 // Structure to represent a fish
@@ -60,7 +60,7 @@ int main()
             school[i].x = new_x;
             school[i].y = new_y;
             double new_obj = calculateObjective(&school[i]);
-            double delta_fi = fabs(new_obj - old_obj);
+            double delta_fi = new_obj - old_obj;
             school[i].delta_fi = delta_fi;
         }
 
@@ -76,13 +76,14 @@ int main()
         {
             // Update fish weight
             school[i].weight = fmin(W_MAX, school[i].weight + school[i].delta_fi / delta_fi_max);
+            school[i].weight = fmax(0, school[i].weight);
 
             bari_num += calculateObjective(&school[i]) * school[i].weight;
             bari_denom += calculateObjective(&school[i]);
         }
         double bari = bari_num / bari_denom;
-
-        printf("Step %d - Barycenter: %lf\n", step + 1, bari);
+        if (step % (NUM_STEPS / 20) == 0)
+            printf("Step %d - Barycenter: %lf\n", step + 1, bari);
     }
 
     // Calculate and print elapsed time
