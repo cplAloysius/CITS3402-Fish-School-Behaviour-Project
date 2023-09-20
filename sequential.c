@@ -3,7 +3,7 @@
 #include <math.h>
 #include <time.h>
 
-#define NUM_FISH 1000000 // Number of fish in the school
+#define NUM_FISH 100 // Number of fish in the school
 #define NUM_STEPS 3000   // Number of simulation steps
 #define W_INITIAL 10.0   // Initial weight of each fish
 #define W_MAX (2 * W_INITIAL)
