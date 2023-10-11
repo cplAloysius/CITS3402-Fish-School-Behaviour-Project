@@ -1,0 +1,6 @@
+{
+    "files.associations": {
+        "iosfwd": "c",
+        "vector": "c"
+    }
+}
