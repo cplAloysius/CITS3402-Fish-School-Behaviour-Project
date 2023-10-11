@@ -4,7 +4,7 @@
 #include <time.h>
 #include <mpi.h>
 
-#define NUM_FISH 1000000 // Number of fish in the school
+#define NUM_FISH 100 // Number of fish in the school
 #define W_INITIAL 10.0   // Initial weight of each fish
 #define MASTER 0
 
@@ -15,10 +15,10 @@ typedef struct
     double weight;
 } Fish;
 
-void write_to_file(double x, double y, double weight, int no_fish, const char *filename) {
+void write_to_file(Fish *school, int no_fish, const char *filename) {
     FILE *file = fopen(filename, "w");
     for (int i = 0; i < no_fish; i++) {
-        fprintf(file, "%.2lf %.2lf %.2lf\n", x, y, weight);
+        fprintf(file, "%.2lf %.2lf %.2lf\n", school[i].x, school[i].y, school[i].weight);
     }
     fclose(file);
 }
@@ -32,11 +32,17 @@ int main()
     MPI_Comm_rank(MPI_COMM_WORLD, &node_id);
 	MPI_Comm_size(MPI_COMM_WORLD, &no_nodes);
 
-    Fish* school_send = NULL;
+    Fish *school_send = NULL;
 
     if (node_id == MASTER) {
         school_send = (Fish *)malloc(NUM_FISH * sizeof(Fish));
-        write_to_file(school, NUM_FISH, "file1");
+        for (int i = 0; i < NUM_FISH; i++)
+        {
+            school_send[i].x = (double)(rand() % 201 - 100); // Random x-coordinate between -100 and 100
+            school_send[i].y = (double)(rand() % 201 - 100); // Random y-coordinate between -100 and 100
+            school_send[i].weight = W_INITIAL;
+        }
+        write_to_file(school_send, NUM_FISH, "file1");
 	}
     
     int fish_nodes = NUM_FISH / no_nodes;
@@ -66,12 +72,7 @@ int main()
 
 
 
-    // for (int i = 0; i < NUM_FISH; i++)
-    // {
-    //     school[i].x = (double)(rand() % 201 - 100); // Random x-coordinate between -100 and 100
-    //     school[i].y = (double)(rand() % 201 - 100); // Random y-coordinate between -100 and 100
-    //     school[i].weight = W_INITIAL;
-    // }
+    
 
     // MPI_Init(&argc, &argv);
     // MPI_Comm_rank(MPI_COMM_WORLD, &process_id);
