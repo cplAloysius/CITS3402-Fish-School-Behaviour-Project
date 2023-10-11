@@ -6,6 +6,8 @@
 #include <omp.h>
 #include <math.h>
 
+#define NUM_FISH 100000
+#define NUM_STEPS 300 
 #define MASTER 0
 #define NUM_FIELDS 4
 #define W_INITIAL 10
@@ -53,9 +55,6 @@ int main() {
     MPI_Comm_rank(MPI_COMM_WORLD, &process_id);
     MPI_Comm_size(MPI_COMM_WORLD, &num_processes);
 
-    const int NUM_FISH = 100; // Define the number of fish
-    const int NUM_STEPS = 10; // Define the number of simulation steps
-
     Fish *send_buf = NULL;
     Fish *recv_buf = NULL;
     const MPI_Datatype MPI_FISH = create_mpi_struct();
@@ -80,6 +79,8 @@ int main() {
     recv_buf = (Fish *)malloc(num_fish_per_process * sizeof(Fish));
 
     MPI_Scatter(send_buf, num_fish_per_process, MPI_FISH, recv_buf, num_fish_per_process, MPI_FISH, MASTER, MPI_COMM_WORLD);
+
+    double start_time = omp_get_wtime();
 
     for (int steps = 0; steps < NUM_STEPS; steps++) {
         double max_difference = 0.0;
@@ -145,6 +146,12 @@ int main() {
 
             printf("%lf\n", barycentre);
         }
+    }
+
+    if (process_id == MASTER) {
+        double end_time = omp_get_wtime();
+        double elapsed_time = end_time - start_time;
+        printf("Elapsed Time: %lf seconds\n", elapsed_time);
     }
 
     free(send_buf);
