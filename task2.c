@@ -143,8 +143,8 @@ int main() {
                 MPI_Finalize();
                 return 1;
             }
-
-            printf("Step %d - Barycenter: %lf\n", steps + 1, barycentre);
+            if (step % (NUM_STEPS / 20) == 0)
+                printf("Step %d - Barycenter: %lf\n", steps + 1, barycentre);
         }
     }
 
