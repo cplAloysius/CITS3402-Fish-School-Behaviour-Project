@@ -6,8 +6,8 @@
 #include <omp.h>
 #include <math.h>
 
-#define NUM_FISH 100000
-#define NUM_STEPS 300 
+#define NUM_FISH 1000000
+#define NUM_STEPS 3000 
 #define MASTER 0
 #define FIELDS 4
 #define W_INITIAL 10
